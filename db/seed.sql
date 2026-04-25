@@ -1,15 +1,13 @@
--- Sample seed data for Hotel Booking System
+-- Sample seed data for Hotel Booking System - Users and Guests only
 
+-- Admin and regular users
 INSERT INTO users (username, password_hash, role)
-VALUES ('admin', 'change_me', 'ADMIN');
+VALUES ('admin', 'change_me', 'ADMIN'),
+       ('guest1', 'guest_pass', 'GUEST');
 
+-- Sample guests
 INSERT INTO guests (name, contact_info)
-VALUES ('John Doe', 'john.doe@example.com');
-
-INSERT INTO rooms (type, price, is_available)
-VALUES ('SingleRoom', 75.00, 1),
-       ('DoubleRoom', 120.00, 1),
-       ('Suite', 210.00, 1);
-
-INSERT INTO reservations (guest_id, room_id, start_date, end_date, status)
-VALUES (1, 1, '2026-05-01', '2026-05-05', 'ACTIVE');
+VALUES ('John Doe', 'john.doe@example.com'),
+       ('Jane Smith', 'jane.smith@example.com'),
+       ('Bob Johnson', 'bob.johnson@example.com'),
+       ('Alice Williams', 'alice.williams@example.com');

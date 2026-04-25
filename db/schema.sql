@@ -42,3 +42,12 @@ CREATE TABLE IF NOT EXISTS reservations (
 
 -- Seed data is kept in db/seed.sql so schema creation remains idempotent.
 -- Run db/seed.sql separately after the schema has been created.
+
+-- Indexes for query performance
+CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_rooms_type ON rooms(type);
+CREATE INDEX IF NOT EXISTS idx_rooms_available ON rooms(is_available);
+CREATE INDEX IF NOT EXISTS idx_reservations_guest_id ON reservations(guest_id);
+CREATE INDEX IF NOT EXISTS idx_reservations_room_id ON reservations(room_id);
+CREATE INDEX IF NOT EXISTS idx_reservations_status ON reservations(status);
+CREATE INDEX IF NOT EXISTS idx_reservations_dates ON reservations(start_date, end_date);
