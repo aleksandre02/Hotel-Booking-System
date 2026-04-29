@@ -8,7 +8,7 @@ This implementation provides the database schema, persistent data storage, and C
 
 ### Scope
 
-**Database Layer** (Person 4 responsibility):
+**Database Layer**:
 - Schema design with referential integrity
 - CRUD operations for users and guests
 - Data consistency checks
@@ -140,4 +140,3 @@ dbManager.close();
 - Invalid SQL is caught and wrapped in `DBException`
 - Connection lifecycle managed by `DatabaseManager`
 - JDBC driver required: SQLite JDBC (if using sqlite)
-- Other team members will extend this with Room, Reservation, and Hotel controller classes
