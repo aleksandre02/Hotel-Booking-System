@@ -2,7 +2,7 @@
 
 A simple hotel reservation system demonstrating object-oriented programming principles.
 
-## Person 4: Database Layer Implementation
+### Database Layer Implementation
 
 This implementation provides the database schema, persistent data storage, and CRUD operations for the Hotel Booking System.
 
@@ -25,7 +25,7 @@ src/main/java/com/hotel/
 │   ├── Guest.java
 │   ├── GuestService.java
 │   └── ... (other auth classes)
-└── db/                # Database Layer (PERSON 4)
+└── db/                # Database Layer
     ├── DatabaseManager.java      # Connection & SQL execution
     ├── DBException.java          # Database exceptions
     ├── DBUserRepository.java      # User CRUD
@@ -38,8 +38,8 @@ src/main/java/com/hotel/
 **Tables (created by db/schema.sql)**
 - **users**: System user credentials and roles
 - **guests**: Guest information (name, contact)
-- **rooms**: Room inventory (added by Person 2)
-- **reservations**: Booking records (added by Person 3)
+- **rooms**: Room inventory
+- **reservations**: Booking records
 
 **Indexes**: FK constraints and query optimization indexes
 

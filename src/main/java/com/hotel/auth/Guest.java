@@ -5,17 +5,32 @@ package com.hotel.auth;
  */
 public class Guest {
     private int guestId;
+    private int userId;
     private String name;
     private String contactInfo;
 
     /**
      * Constructs a new Guest.
      * @param guestId the guest ID
+     * @param userId the linked user ID
      * @param name the guest's name
      * @param contactInfo the contact information
      */
-    public Guest(int guestId, String name, String contactInfo) {
+    public Guest(int guestId, int userId, String name, String contactInfo) {
         this.guestId = guestId;
+        this.userId = userId;
+        this.name = name;
+        this.contactInfo = contactInfo;
+    }
+
+    /**
+     * Constructs a new Guest before persistence.
+     * @param userId the linked user ID
+     * @param name the guest's name
+     * @param contactInfo the contact information
+     */
+    public Guest(int userId, String name, String contactInfo) {
+        this.userId = userId;
         this.name = name;
         this.contactInfo = contactInfo;
     }
@@ -34,6 +49,22 @@ public class Guest {
      */
     public void setGuestId(int guestId) {
         this.guestId = guestId;
+    }
+
+    /**
+     * Gets the linked user ID.
+     * @return the user ID
+     */
+    public int getUserId() {
+        return userId;
+    }
+
+    /**
+     * Sets the linked user ID.
+     * @param userId the user ID
+     */
+    public void setUserId(int userId) {
+        this.userId = userId;
     }
 
     /**
@@ -70,6 +101,6 @@ public class Guest {
 
     @Override
     public String toString() {
-        return "Guest{id=" + guestId + ", name='" + name + "', contact='" + contactInfo + "'}";
+        return "Guest{id=" + guestId + ", userId=" + userId + ", name='" + name + "', contact='" + contactInfo + "'}";
     }
 }

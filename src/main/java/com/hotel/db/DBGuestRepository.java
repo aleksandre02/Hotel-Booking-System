@@ -20,12 +20,13 @@ public class DBGuestRepository implements IGuestRepository {
 
     @Override
     public void addGuest(Guest guest) {
-        String sql = "INSERT INTO guests(name, contact_info) VALUES (?, ?)";
+        String sql = "INSERT INTO guests(user_id, name, contact_info) VALUES (?, ?, ?)";
         try {
             Connection connection = databaseManager.connect();
             try (PreparedStatement statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-                statement.setString(1, guest.getName());
-                statement.setString(2, guest.getContactInfo());
+                statement.setInt(1, guest.getUserId());
+                statement.setString(2, guest.getName());
+                statement.setString(3, guest.getContactInfo());
                 statement.executeUpdate();
 
                 try (ResultSet keys = statement.getGeneratedKeys()) {
@@ -43,14 +44,19 @@ public class DBGuestRepository implements IGuestRepository {
 
     @Override
     public Guest getGuestById(int id) {
-        String sql = "SELECT guest_id, name, contact_info FROM guests WHERE guest_id = ?";
+        String sql = "SELECT guest_id, user_id, name, contact_info FROM guests WHERE guest_id = ?";
         try {
             Connection connection = databaseManager.connect();
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setInt(1, id);
                 try (ResultSet rs = statement.executeQuery()) {
                     if (rs.next()) {
-                        return new Guest(rs.getInt("guest_id"), rs.getString("name"), rs.getString("contact_info"));
+                        return new Guest(
+                            rs.getInt("guest_id"),
+                            rs.getInt("user_id"),
+                            rs.getString("name"),
+                            rs.getString("contact_info")
+                        );
                     }
                     return null;
                 }
@@ -62,14 +68,19 @@ public class DBGuestRepository implements IGuestRepository {
 
     @Override
     public List<Guest> getAllGuests() {
-        String sql = "SELECT guest_id, name, contact_info FROM guests";
+        String sql = "SELECT guest_id, user_id, name, contact_info FROM guests";
         try {
             Connection connection = databaseManager.connect();
             try (PreparedStatement statement = connection.prepareStatement(sql);
                  ResultSet rs = statement.executeQuery()) {
                 List<Guest> guests = new ArrayList<>();
                 while (rs.next()) {
-                    guests.add(new Guest(rs.getInt("guest_id"), rs.getString("name"), rs.getString("contact_info")));
+                    guests.add(new Guest(
+                        rs.getInt("guest_id"),
+                        rs.getInt("user_id"),
+                        rs.getString("name"),
+                        rs.getString("contact_info")
+                    ));
                 }
                 return guests;
             }

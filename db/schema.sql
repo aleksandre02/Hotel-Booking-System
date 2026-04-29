@@ -9,11 +9,13 @@ CREATE TABLE IF NOT EXISTS users (
     role TEXT NOT NULL
 );
 
--- Guests table corresponds to the Guest class
+-- Guests table corresponds to the Guest class. Each guest must also be a user.
 CREATE TABLE IF NOT EXISTS guests (
     guest_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL UNIQUE,
     name TEXT NOT NULL,
-    contact_info TEXT
+    contact_info TEXT,
+    FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE
 );
 
 -- Rooms table corresponds to the Room class and stores room subtype in the type column
@@ -47,6 +49,7 @@ CREATE TABLE IF NOT EXISTS reservations (
 CREATE INDEX IF NOT EXISTS idx_users_username ON users(username);
 CREATE INDEX IF NOT EXISTS idx_rooms_type ON rooms(type);
 CREATE INDEX IF NOT EXISTS idx_rooms_available ON rooms(is_available);
+CREATE INDEX IF NOT EXISTS idx_guests_user_id ON guests(user_id);
 CREATE INDEX IF NOT EXISTS idx_reservations_guest_id ON reservations(guest_id);
 CREATE INDEX IF NOT EXISTS idx_reservations_room_id ON reservations(room_id);
 CREATE INDEX IF NOT EXISTS idx_reservations_status ON reservations(status);
