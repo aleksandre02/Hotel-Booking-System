@@ -140,3 +140,42 @@ dbManager.close();
 - Invalid SQL is caught and wrapped in `DBException`
 - Connection lifecycle managed by `DatabaseManager`
 - JDBC driver required: SQLite JDBC (if using sqlite)
+
+
+## UI / Console Layer (src/main/java/com/hotel/ui/)
+
+This package contains:
+
+- Main.java — application entry point
+- ConsoleUI.java — menu system, input handling, and integration layer
+
+The UI allows users to:
+
+- register and log in
+- view all rooms
+- view available rooms
+- filter rooms by type
+- filter rooms by maximum price
+- create reservations
+- cancel reservations
+- view reservations
+- search reservations by room ID
+- search reservations by date range
+- view active reservations
+
+How to Run
+
+Compile all Java files:
+
+javac -d out $(find src/main/java -name "*.java")
+
+Run the application:
+
+java -cp out com.hotel.ui.Main
+
+For Windows PowerShell:
+
+Get-ChildItem -Recurse src/main/java -Filter *.java | ForEach-Object { $_.FullName } > sources.txt
+javac -d out @sources.txt
+java -cp out com.hotel.ui.Main
+
