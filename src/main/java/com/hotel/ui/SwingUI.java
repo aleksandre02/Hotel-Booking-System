@@ -52,6 +52,7 @@ public class SwingUI extends JFrame {
         addCard("viewReservations", createViewReservationsPanel());
         addCard("searchReservations", createSearchReservationsPanel());
         addCard("addRoom", createAddRoomPanel());
+        addCard("updateRoom", createUpdateRoomPanel());
 
         add(mainPanel);
         cardLayout.show(mainPanel, "login");
@@ -318,7 +319,7 @@ public class SwingUI extends JFrame {
 
         panel.add(topPanel, BorderLayout.NORTH);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(8, 2, 10, 10));
+        JPanel buttonPanel = new JPanel(new GridLayout(0, 2, 10, 10));
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         addMenuButton(buttonPanel, "Show All Rooms", e -> cardLayout.show(mainPanel, "rooms"));
@@ -333,6 +334,8 @@ public class SwingUI extends JFrame {
             }
         });
         addMenuButton(buttonPanel, "Admin: Add Room", e -> showAddRoomPanel());
+
+        addMenuButton(buttonPanel, "Admin: Update Room", e -> showUpdateRoomPanel());
 
         addMenuButton(buttonPanel, "View My Reservations", e -> showViewReservationsPanel());
 
@@ -383,6 +386,15 @@ public class SwingUI extends JFrame {
         cardLayout.show(mainPanel, "rooms");
     }
 
+    private void showUpdateRoomPanel() {
+        if (!requireAdmin()) {
+            return;
+        }
+
+        refreshCard("updateRoom", createUpdateRoomPanel());
+        cardLayout.show(mainPanel, "updateRoom");
+    }
+
     private void showAvailableRoomsPanel() {
         refreshCard("availableRooms", createAvailableRoomsPanel());
         cardLayout.show(mainPanel, "availableRooms");
@@ -391,6 +403,40 @@ public class SwingUI extends JFrame {
     private void showReservationPanel() {
         refreshCard("reservation", createReservationPanel());
         cardLayout.show(mainPanel, "reservation");
+    }
+
+    private int findRoomIndexById(int roomId) {
+        for (int i = 0; i < rooms.size(); i++) {
+            Room room = rooms.get(i);
+
+            if (room.getRoomId() == roomId) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private boolean hasActiveReservationForRoom(int roomId) {
+        for (Reservation reservation : reservationService.getReservations()) {
+            if (reservation.getRoomId() == roomId && reservation.isActive()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private Room createRoomByType(int roomId, String type, double price, RoomStatus status, boolean hasJacuzzi) {
+        if ("Single".equals(type)) {
+            return new SingleRoom(roomId, price, status);
+        }
+
+        if ("Double".equals(type)) {
+            return new DoubleRoom(roomId, price, status);
+        }
+
+        return new Suite(roomId, price, status, hasJacuzzi);
     }
 
     private void showAddRoomPanel() {
@@ -450,6 +496,175 @@ public class SwingUI extends JFrame {
         JLabel titleLabel = new JLabel("All Rooms");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         panel.add(titleLabel, BorderLayout.NORTH);
+
+        JTable roomTable = createRoomTable(rooms);
+        panel.add(new JScrollPane(roomTable), BorderLayout.CENTER);
+
+        JButton backButton = new JButton("Back");
+        backButton.addActionListener(e -> cardLayout.show(mainPanel, "menu"));
+        panel.add(backButton, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private JPanel createUpdateRoomPanel() {
+        JPanel panel = new JPanel(new BorderLayout(10, 10));
+        panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+        JLabel titleLabel = new JLabel("Admin: Update Room");
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        panel.add(titleLabel, BorderLayout.NORTH);
+
+        JPanel inputPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        inputPanel.add(new JLabel("Room ID:"), gbc);
+
+        JTextField roomIdField = new JTextField(10);
+        gbc.gridx = 1;
+        inputPanel.add(roomIdField, gbc);
+
+        JButton loadButton = new JButton("Load Room");
+        gbc.gridx = 2;
+        inputPanel.add(loadButton, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        inputPanel.add(new JLabel("Room Type:"), gbc);
+
+        JComboBox<String> typeCombo = new JComboBox<>(new String[]{"Single", "Double", "Suite"});
+        gbc.gridx = 1;
+        inputPanel.add(typeCombo, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        inputPanel.add(new JLabel("Price per night:"), gbc);
+
+        JTextField priceField = new JTextField(10);
+        gbc.gridx = 1;
+        inputPanel.add(priceField, gbc);
+
+        gbc.gridx = 0;
+        gbc.gridy = 3;
+        inputPanel.add(new JLabel("Status:"), gbc);
+
+        JComboBox<RoomStatus> statusCombo = new JComboBox<>(RoomStatus.values());
+        gbc.gridx = 1;
+        inputPanel.add(statusCombo, gbc);
+
+        JCheckBox jacuzziCheckBox = new JCheckBox("Suite has jacuzzi");
+        gbc.gridx = 1;
+        gbc.gridy = 4;
+        inputPanel.add(jacuzziCheckBox, gbc);
+
+        jacuzziCheckBox.setEnabled(false);
+
+        typeCombo.addActionListener(e -> {
+            String selectedType = (String) typeCombo.getSelectedItem();
+            boolean isSuite = "Suite".equals(selectedType);
+
+            jacuzziCheckBox.setEnabled(isSuite);
+
+            if (!isSuite) {
+                jacuzziCheckBox.setSelected(false);
+            }
+        });
+
+        loadButton.addActionListener(e -> {
+            try {
+                int roomId = Integer.parseInt(roomIdField.getText().trim());
+                Room room = findRoomById(roomId);
+
+                if (room == null) {
+                    JOptionPane.showMessageDialog(this, "Room not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                typeCombo.setSelectedItem(room.getType());
+                priceField.setText(String.valueOf(room.getPrice()));
+                statusCombo.setSelectedItem(room.getStatus());
+
+                if (room instanceof Suite) {
+                    jacuzziCheckBox.setEnabled(true);
+                    jacuzziCheckBox.setSelected(((Suite) room).isHasJacuzzi());
+                } else {
+                    jacuzziCheckBox.setEnabled(false);
+                    jacuzziCheckBox.setSelected(false);
+                }
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Room ID must be a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        JButton updateButton = new JButton("Update Room");
+        gbc.gridx = 1;
+        gbc.gridy = 5;
+        inputPanel.add(updateButton, gbc);
+
+        updateButton.addActionListener(e -> {
+            if (!requireAdmin()) {
+                return;
+            }
+
+            try {
+                int roomId = Integer.parseInt(roomIdField.getText().trim());
+                int roomIndex = findRoomIndexById(roomId);
+
+                if (roomIndex == -1) {
+                    JOptionPane.showMessageDialog(this, "Room not found.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                double price = Double.parseDouble(priceField.getText().trim());
+
+                if (price <= 0) {
+                    JOptionPane.showMessageDialog(this, "Price must be greater than 0.", "Error", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                String type = (String) typeCombo.getSelectedItem();
+                RoomStatus status = (RoomStatus) statusCombo.getSelectedItem();
+
+                if (hasActiveReservationForRoom(roomId) && status == RoomStatus.AVAILABLE) {
+                    JOptionPane.showMessageDialog(
+                            this,
+                            "This room has an active reservation, so it cannot be marked as AVAILABLE.",
+                            "Error",
+                            JOptionPane.ERROR_MESSAGE
+                    );
+                    return;
+                }
+
+                Room updatedRoom = createRoomByType(
+                        roomId,
+                        type,
+                        price,
+                        status,
+                        jacuzziCheckBox.isSelected()
+                );
+
+                rooms.set(roomIndex, updatedRoom);
+
+                refreshCard("rooms", createRoomsPanel());
+                refreshCard("availableRooms", createAvailableRoomsPanel());
+                refreshCard("reservation", createReservationPanel());
+                refreshCard("updateRoom", createUpdateRoomPanel());
+
+                JOptionPane.showMessageDialog(this, "Room updated successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
+
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Room ID and price must be valid numbers.", "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        panel.add(inputPanel, BorderLayout.NORTH);
 
         JTable roomTable = createRoomTable(rooms);
         panel.add(new JScrollPane(roomTable), BorderLayout.CENTER);
