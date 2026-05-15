@@ -13,6 +13,8 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
+import com.hotel.db.RoomRepository;
+
 
 /**
  * Swing-based graphical user interface for the Hotel Booking System.
@@ -23,6 +25,7 @@ public class SwingUI extends JFrame {
     private final GuestService guestService = new GuestService();
     private final RoomService roomService = new RoomService();
     private final ReservationService reservationService = new ReservationService();
+    private final RoomRepository roomRepository = new RoomRepository();
 
     private final List<Room> rooms = new ArrayList<>();
     private int nextReservationId = 1;
@@ -38,7 +41,7 @@ public class SwingUI extends JFrame {
         setLocationRelativeTo(null);
         setResizable(true);
 
-        seedRooms();
+        loadRooms();
 
         cardLayout = new CardLayout();
         mainPanel = new JPanel(cardLayout);
@@ -57,6 +60,16 @@ public class SwingUI extends JFrame {
         add(mainPanel);
         cardLayout.show(mainPanel, "login");
         setVisible(true);
+    }
+
+    private void loadRooms() {
+        rooms.clear();
+        rooms.addAll(roomRepository.findAll());
+
+        if (rooms.isEmpty()) {
+            seedRooms();
+            roomRepository.saveAll(rooms);
+        }
     }
 
     private void seedRooms() {
@@ -224,6 +237,7 @@ public class SwingUI extends JFrame {
                 }
 
                 rooms.add(newRoom);
+                roomRepository.save(newRoom);
 
                 JOptionPane.showMessageDialog(this, "Room added successfully.", "Success", JOptionPane.INFORMATION_MESSAGE);
 
@@ -235,6 +249,8 @@ public class SwingUI extends JFrame {
                 refreshCard("rooms", createRoomsPanel());
                 refreshCard("availableRooms", createAvailableRoomsPanel());
                 refreshCard("reservation", createReservationPanel());
+                refreshCard("viewReservations", createViewReservationsPanel());
+                refreshCard("searchReservations", createSearchReservationsPanel());
 
             } catch (NumberFormatException ex) {
                 JOptionPane.showMessageDialog(this, "Room ID and price must be valid numbers.", "Error", JOptionPane.ERROR_MESSAGE);
@@ -322,15 +338,15 @@ public class SwingUI extends JFrame {
         JPanel buttonPanel = new JPanel(new GridLayout(0, 2, 10, 10));
         buttonPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        addMenuButton(buttonPanel, "Show All Rooms", e -> cardLayout.show(mainPanel, "rooms"));
+        addMenuButton(buttonPanel, "Show All Rooms", e -> showRoomsPanel());
 
-        addMenuButton(buttonPanel, "Show Available Rooms", e -> cardLayout.show(mainPanel, "availableRooms"));
+        addMenuButton(buttonPanel, "Show Available Rooms", e -> showAvailableRoomsPanel());
 
         addMenuButton(buttonPanel, "Filter Rooms", e -> cardLayout.show(mainPanel, "filter"));
 
         addMenuButton(buttonPanel, "Create Reservation", e -> {
             if (requireLogin()) {
-                cardLayout.show(mainPanel, "reservation");
+                showReservationPanel();
             }
         });
         addMenuButton(buttonPanel, "Admin: Add Room", e -> showAddRoomPanel());
@@ -341,6 +357,7 @@ public class SwingUI extends JFrame {
 
         addMenuButton(buttonPanel, "Admin: Search Reservations", e -> {
             if (requireAdmin()) {
+                refreshCard("searchReservations", createSearchReservationsPanel());
                 cardLayout.show(mainPanel, "searchReservations");
             }
         });
@@ -649,6 +666,7 @@ public class SwingUI extends JFrame {
                 );
 
                 rooms.set(roomIndex, updatedRoom);
+                roomRepository.save(updatedRoom);
 
                 refreshCard("rooms", createRoomsPanel());
                 refreshCard("availableRooms", createAvailableRoomsPanel());
@@ -843,6 +861,7 @@ public class SwingUI extends JFrame {
 
                 Reservation reservation = reservationService.createReservation(nextReservationId++, guest, roomId, startDate, endDate);
                 roomService.reserveRoom(rooms, roomId);
+                roomRepository.updateStatus(roomId, RoomStatus.RESERVED);
 
                 refreshCard("rooms", createRoomsPanel());
                 refreshCard("availableRooms", createAvailableRoomsPanel());
@@ -938,6 +957,7 @@ public class SwingUI extends JFrame {
 
                 reservationService.cancelReservation(reservationId);
                 roomService.releaseRoom(rooms, res.getRoomId());
+                roomRepository.updateStatus(res.getRoomId(), RoomStatus.AVAILABLE);
                 model.removeRow(selectedRow);
 
                 JOptionPane.showMessageDialog(this, "Reservation cancelled.", "Success", JOptionPane.INFORMATION_MESSAGE);
@@ -961,11 +981,7 @@ public class SwingUI extends JFrame {
             return;
         }
 
-        mainPanel.remove(6);
-        mainPanel.add(createViewReservationsPanel(), "viewReservations", 6);
-
-        mainPanel.revalidate();
-        mainPanel.repaint();
+        refreshCard("viewReservations", createViewReservationsPanel());
 
         cardLayout.show(mainPanel, "viewReservations");
     }
@@ -988,9 +1004,10 @@ public class SwingUI extends JFrame {
         gbc.gridx = 0;
         gbc.gridy = 1;
         searchPanel.add(new JLabel("Room ID:"), gbc);
-        JSpinner roomIdSpinner = new JSpinner(new SpinnerNumberModel(101, 101, 302, 1));
+
+        JTextField roomIdField = new JTextField(10);
         gbc.gridx = 1;
-        searchPanel.add(roomIdSpinner, gbc);
+        searchPanel.add(roomIdField, gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 2;
@@ -1025,7 +1042,7 @@ public class SwingUI extends JFrame {
 
             try {
                 if ("By Room ID".equals(searchType)) {
-                    int roomId = (Integer) roomIdSpinner.getValue();
+                    int roomId = Integer.parseInt(roomIdField.getText().trim());
                     for (Reservation res : reservationService.getReservations()) {
                         if (res.getRoomId() == roomId) {
                             addReservationRow(resultModel, res);
@@ -1048,8 +1065,15 @@ public class SwingUI extends JFrame {
                         }
                     }
                 }
+
+                if (resultModel.getRowCount() == 0) {
+                    JOptionPane.showMessageDialog(this, "No reservations found.", "Search Result", JOptionPane.INFORMATION_MESSAGE);
+                }
+
             } catch (DateTimeParseException ex) {
                 JOptionPane.showMessageDialog(this, "Invalid date format. Use YYYY-MM-DD.", "Error", JOptionPane.ERROR_MESSAGE);
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, "Room ID must be a valid number.", "Error", JOptionPane.ERROR_MESSAGE);
             }
         });
 
@@ -1081,7 +1105,7 @@ public class SwingUI extends JFrame {
     private void updateRoomTable(DefaultTableModel model, List<Room> roomList) {
         model.setRowCount(0);
         for (Room room : roomList) {
-            String type = room.getClass().getSimpleName();
+            String type = room.getType();
             model.addRow(new Object[]{
                 room.getRoomId(),
                 type,
