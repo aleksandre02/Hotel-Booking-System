@@ -1,181 +1,74 @@
-# Hotel-Booking-System
+# Hotel Booking System
 
-A simple hotel reservation system demonstrating object-oriented programming principles.
+A Java Object-Oriented Programming project for managing hotel rooms, guests, and reservations.  
+The system includes a Swing graphical user interface, role-based access control, room management, booking functionality, and SQLite-based room persistence.
 
-### Database Layer Implementation
+---
 
-This implementation provides the database schema, persistent data storage, and CRUD operations for the Hotel Booking System.
+## Project Overview
 
-### Scope
+The Hotel Booking System allows guests to view rooms, create reservations, and manage their own bookings.  
+Administrators can manage hotel rooms, update room details, and search reservations.
 
-**Database Layer**:
-- Schema design with referential integrity
-- CRUD operations for users and guests
-- Data consistency checks
-- Database initialization
+The project demonstrates core OOP principles such as:
 
-### Architecture
+- Encapsulation
+- Abstraction
+- Inheritance
+- Polymorphism
+- Association
+- Aggregation / Composition
 
-```
-src/main/java/com/hotel/
-├── auth/              # Existing auth entities
-│   ├── User.java
-│   ├── Role.java
-│   ├── AuthService.java
-│   ├── Guest.java
-│   ├── GuestService.java
-│   └── ... (other auth classes)
-└── db/                # Database Layer
-    ├── DatabaseManager.java      # Connection & SQL execution
-    ├── DBException.java          # Database exceptions
-    ├── DBUserRepository.java      # User CRUD
-    ├── DBGuestRepository.java     # Guest CRUD
-    └── DatabaseSetup.java        # CLI initialization
-```
+---
 
-### Database Schema
+## Features
 
-**Tables (created by db/schema.sql)**
-- **users**: System user credentials and roles
-- **guests**: Guest information (name, contact)
-- **rooms**: Room inventory
-- **reservations**: Booking records
+### Guest Features
 
-**Indexes**: FK constraints and query optimization indexes
+Guests can:
 
-### CRUD Operations
+- Register an account
+- Log in
+- View all rooms
+- View available rooms
+- Filter rooms by type and price
+- Create reservations
+- View their own reservations
+- Cancel their own reservations
 
-**DBUserRepository**:
-- `addUser(user)` — Create
-- `getUserById(id)` — Read by ID
-- `getUserByUsername(username)` — Read by username
-- `getAllUsers()` — Read all
-- `deleteUser(id)` — Delete
+### Admin Features
 
-**DBGuestRepository**:
-- `addGuest(guest)` — Create
-- `getGuestById(id)` — Read by ID
-- `getAllGuests()` — Read all
+Admins can:
 
-### Data Integrity Features
+- Log in with admin credentials
+- View all rooms
+- Add new rooms
+- Update existing room details
+- View all reservations
+- Search reservations
+- Cancel reservations
+- Manage room availability
 
-- ✅ Foreign key constraints (guests → users potential, reservations → guests/rooms)
-- ✅ Transaction support with rollback
-- ✅ Unique constraints (username)
-- ✅ NOT NULL constraints on required fields
-- ✅ Auto-increment primary keys
-- ✅ Date storage in standard format
+---
 
-### Setup & Compilation
+## User Roles
 
-#### 1. Compile database classes
-```bash
-javac -d out \
-  src/main/java/com/hotel/auth/{User,Role,Guest}.java \
-  src/main/java/com/hotel/db/*.java
-```
+The system supports two roles:
 
-#### 2. Initialize database
-```bash
-java -cp out com.hotel.db.DatabaseSetup
-```
+| Role | Description |
+|---|---|
+| `GUEST` | Regular user who can book rooms and manage their own reservations |
+| `ADMIN` | Staff/admin user who can manage rooms and view/search reservations |
 
-This creates `db/hotel.db` (SQLite) using `db/schema.sql`.
+Normal users are registered as `GUEST` by default.  
+Admin access is protected using role checks.
 
-#### 3. Seed sample data (optional)
-```bash
-sqlite3 db/hotel.db < db/seed.sql
-```
+---
 
-### Database Connection
+## Default Admin Login
 
-**Default Configuration**:
-- Type: SQLite
-- File: `db/hotel.db`
-- Schema: `db/schema.sql`
+Use the following default admin account:
 
-**Custom Configuration**:
-```bash
-java -cp out com.hotel.db.DatabaseSetup "jdbc:sqlite:custom/path.db" "custom/schema.sql"
-```
-
-### Usage Example
-
-```java
-import com.hotel.db.DatabaseManager;
-import com.hotel.db.DBUserRepository;
-import com.hotel.db.DBGuestRepository;
-import com.hotel.auth.User;
-import com.hotel.auth.Role;
-import com.hotel.auth.Guest;
-
-// Initialize database
-DatabaseManager dbManager = new DatabaseManager(
-    "jdbc:sqlite:db/hotel.db",
-    "db/schema.sql"
-);
-dbManager.initializeDatabase();
-
-// User CRUD
-DBUserRepository userRepo = new DBUserRepository(dbManager);
-User newUser = new User(0, "john_admin", "hashed_pwd", Role.ADMIN);
-userRepo.addUser(newUser);
-
-User user = userRepo.getUserByUsername("john_admin");
-System.out.println("User: " + user);
-
-// Guest CRUD  
-DBGuestRepository guestRepo = new DBGuestRepository(dbManager);
-Guest guest = new Guest(0, "John Doe", "john@example.com");
-guestRepo.addGuest(guest);
-
-List<Guest> allGuests = guestRepo.getAllGuests();
-
-dbManager.close();
-```
-
-### Notes
-
-- Database operations are transactional with auto-commit disabled
-- Invalid SQL is caught and wrapped in `DBException`
-- Connection lifecycle managed by `DatabaseManager`
-- JDBC driver required: SQLite JDBC (if using sqlite)
-
-
-## UI / Console Layer (src/main/java/com/hotel/ui/)
-
-This package contains:
-
-- Main.java — application entry point
-- ConsoleUI.java — menu system, input handling, and integration layer
-
-The UI allows users to:
-
-- register and log in
-- view all rooms
-- view available rooms
-- filter rooms by type
-- filter rooms by maximum price
-- create reservations
-- cancel reservations
-- view reservations
-- search reservations by room ID
-- search reservations by date range
-- view active reservations
-
-How to Run
-
-Compile all Java files:
-
-javac -d out $(find src/main/java -name "*.java")
-
-Run the application:
-
-java -cp out com.hotel.ui.Main
-
-For Windows PowerShell:
-
-Get-ChildItem -Recurse src/main/java -Filter *.java | ForEach-Object { $_.FullName } > sources.txt
-javac -d out @sources.txt
-java -cp out com.hotel.ui.Main
-
+```text
+Username: admin
+Password: admin123
