@@ -5,7 +5,6 @@ package com.hotel.ui;
  */
 public class Main {
     public static void main(String[] args) {
-        ConsoleUI consoleUI = new ConsoleUI();
-        consoleUI.start();
+        SwingUI.main(args);
     }
 }
